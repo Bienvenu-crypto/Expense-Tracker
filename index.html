@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker - Manage Your Finances</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Inline helper for specific layout tweaks */
+        .header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .nav-btn {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid transparent;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover,
+        .nav-btn.active {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--accent-primary);
+        }
+
+        .nav-btn.active {
+            border-color: rgba(139, 92, 246, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">💰 Expense Tracker</h1>
+            <div class="header-controls">
+                <!-- Removed inline onclick handlers to use app.js listeners -->
+                <button class="nav-btn active" id="navDashboard">📊 Dashboard</button>
+                <button class="nav-btn" id="navCategories">🏷️ Categories</button>
+                <button class="nav-btn" id="navAdvisor">🤖 AI Advisor</button>
+                <div style="width: 1px; height: 24px; background: var(--card-border); margin: 0 8px;"></div>
+                <button class="btn-primary" id="addExpenseBtn">+ Add Expense</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+
+            <!-- DASHBOARD VIEW -->
+            <div id="view-dashboard">
+                <!-- Summary Cards -->
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="card-icon">📊</div>
+                        <div class="card-content">
+                            <h3>Total Spent</h3>
+                            <p class="card-value" id="totalSpent">$0.00</p>
+                            <span class="card-subtitle">This Month</span>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="card-icon">💳</div>
+                        <div class="card-content">
+                            <h3>Total Budget</h3>
+                            <p class="card-value" id="totalBudget">$0.00</p>
+                            <span class="card-subtitle">Monthly Limit</span>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="card-icon">💸</div>
+                        <div class="card-content">
+                            <h3>Remaining</h3>
+                            <p class="card-value" id="remaining">$0.00</p>
+                            <span class="card-subtitle">Available to Spend</span>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="card-icon">📈</div>
+                        <div class="card-content">
+                            <h3>Avg Daily</h3>
+                            <p class="card-value" id="avgDaily">$0.00</p>
+                            <span class="card-subtitle">Average per Day</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-section">
+                    <div class="chart-card">
+                        <h2>Spending by Category</h2>
+                        <div class="chart-container" style="height: 300px; position: relative;">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h2>Monthly Trend</h2>
+                        <div class="chart-container" style="height: 300px; position: relative;">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Budget Overview -->
+                <div class="budget-section">
+                    <div class="section-header">
+                        <h2>Budget Overview</h2>
+                        <button class="btn-secondary" id="manageBudgetsBtn">⚙️ Manage Budgets</button>
+                    </div>
+                    <div id="budgetList" class="budget-list"></div>
+                </div>
+
+                <!-- Recent Expenses -->
+                <div class="expenses-section">
+                    <div class="section-header">
+                        <h2>Recent Expenses</h2>
+                        <div class="filter-controls">
+                            <select id="categoryFilter" class="filter-select">
+                                <option value="all">All Categories</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="expensesList" class="expenses-list"></div>
+                </div>
+            </div>
+
+            <!-- CATEGORIES VIEW (New) -->
+            <div id="view-categories" style="display: none;">
+                <div class="dashboard-header-section">
+                    <div class="dashboard-titles">
+                        <h1 style="font-size: 28px; margin-bottom: 8px;">Manage Categories</h1>
+                        <p style="color: var(--text-secondary);">Customize your expense categories</p>
+                    </div>
+                    <button class="btn-primary" id="addCategoryBtn">+ New Category</button>
+                </div>
+
+                <div class="categories-grid" id="categoriesList">
+                    <!-- Categories injected by JS -->
+                </div>
+            </div>
+
+            <!-- AI ADVISOR VIEW -->
+            <div id="view-advisor" style="display: none;">
+                <div class="dashboard-header-section">
+                    <div class="dashboard-titles">
+                        <h1 style="font-size: 28px; margin-bottom: 8px;">AI Financial Advisor</h1>
+                        <p style="color: var(--text-secondary);">Get personalized insights to reach your goals</p>
+                    </div>
+                    <!-- Added onclick as failsafe for event listeners -->
+                    <button class="btn-secondary" id="openSettingsBtn" onclick="openSettingsModal()"
+                        style="padding: 8px 16px; font-size: 14px;">
+                        ⚙️ API Settings
+                    </button>
+                </div>
+
+                <div class="advisor-layout">
+                    <!-- Input Section -->
+                    <div class="advisor-column input-column">
+                        <div class="advisor-card">
+                            <div class="advisor-header">
+                                <span class="advisor-icon-lg">🎯</span>
+                                <h3>Your Financial Goals</h3>
+                            </div>
+                            <p class="advisor-desc">Tell me what you want to achieve (e.g., "Save $500 for a trip",
+                                "Stop eating out so much"). I'll analyze your spending and give you a plan.</p>
+
+                            <div class="form-group">
+                                <textarea id="financialGoals" class="advisor-input"
+                                    placeholder="Type your goals here..." rows="5"></textarea>
+                            </div>
+
+                            <button class="btn-primary btn-block" id="analyzeBtn">
+                                ✨ Generate AI Insights
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Output Section -->
+                    <div class="advisor-column output-column">
+                        <div id="aiLoading" class="advisor-loading" style="display: none;">
+                            <div class="spinner"></div>
+                            <p>Analyzing your spending patterns...</p>
+                        </div>
+
+                        <div id="aiOutput" class="advisor-results" style="display: none;">
+                            <!-- Results injected by JS -->
+                        </div>
+
+                        <div id="aiEmpty" class="advisor-empty">
+                            <div class="empty-icon">🤖</div>
+                            <h3>Ready to Help</h3>
+                            <p>Enter your goals on the left to get started.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Add Expense Modal -->
+    <div id="addExpenseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Expense</h2>
+                <button class="close-btn" id="closeExpenseModal">&times;</button>
+            </div>
+            <form id="expenseForm">
+                <div class="form-group">
+                    <label for="expenseAmount">Amount ($)</label>
+                    <input type="number" id="expenseAmount" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="expenseCategory">Category</label>
+                    <select id="expenseCategory" required>
+                        <option value="">Select a category</option>
+                        <option value="Food">🍔 Food</option>
+                        <option value="Entertainment">🎮 Entertainment</option>
+                        <option value="Transport">🚗 Transport</option>
+                        <option value="Shopping">🛍️ Shopping</option>
+                        <option value="Bills">💡 Bills</option>
+                        <option value="Health">⚕️ Health</option>
+                        <option value="Other">📦 Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="expenseDescription">Description</label>
+                    <input type="text" id="expenseDescription" placeholder="What did you buy?" required>
+                </div>
+                <div class="form-group">
+                    <label for="expenseDate">Date</label>
+                    <input type="date" id="expenseDate" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancelExpenseBtn">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Manage Budgets Modal -->
+    <div id="manageBudgetsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Manage Category Budgets</h2>
+                <button class="close-btn" id="closeBudgetsModal">&times;</button>
+            </div>
+            <div id="budgetForm" class="budget-form"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-primary" id="saveBudgetsBtn">Save Budgets</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Modal -->
+    <div id="warningModal" class="modal">
+        <div class="modal-content warning-modal">
+            <div class="modal-header">
+                <h2>⚠️ Budget Warning</h2>
+                <button class="close-btn" id="closeWarningModal">&times;</button>
+            </div>
+            <div id="warningMessage" class="warning-message"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="cancelWarningBtn">Cancel</button>
+                <button type="button" class="btn-warning" id="proceedWarningBtn">Add Anyway</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Add/Edit Modal -->
+    <div class="modal" id="categoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="categoryModalTitle">Add Category</h2>
+                <button class="modal-close" id="closeCategoryModal">×</button>
+            </div>
+            <form id="categoryForm">
+                <div class="form-group">
+                    <label for="categoryName">Category Name</label>
+                    <input type="text" id="categoryName" placeholder="e.g., Subscriptions, Gym, Pet Care" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancelCategoryBtn">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- API Settings Modal -->
+    <div id="apiSettingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🤖 AI Settings</h2>
+                <button class="close-btn" id="closeSettingsModal">&times;</button>
+            </div>
+            <div class="warning-message"
+                style="background: rgba(99, 102, 241, 0.1); border-color: var(--accent-primary);">
+                <p>To use the advanced AI features, you need a <strong>Google Gemini API Key</strong>.</p>
+                <p style="margin-top:8px; font-size:14px;">The key is stored locally in your browser and sent directly
+                    to Google. <a href="https://aistudio.google.com/app/apikey" target="_blank"
+                        style="color: var(--accent-primary);">Get a free key here</a>.</p>
+            </div>
+            <form id="apiSettingsForm">
+                <div class="form-group">
+                    <label for="geminiApiKey">Gemini API Key</label>
+                    <input type="password" id="geminiApiKey" placeholder="Paste your API key here..." required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancelSettingsBtn">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Key</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="app-v6.js?v=9"></script>
+    <script src="analytics.js?v=9"></script>
+</body>
+
+</html>

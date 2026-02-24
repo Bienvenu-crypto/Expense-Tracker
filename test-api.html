@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gemini API Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #111;
+            color: #0f0;
+        }
+
+        input,
+        button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+        }
+
+        #log {
+            white-space: pre-wrap;
+            margin-top: 20px;
+            border: 1px solid #333;
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>API Diagnostics</h1>
+    <input type="text" id="apiKey" placeholder="Paste API Key Here" style="width: 300px;">
+    <button onclick="testAPI()">Test Connection</button>
+    <div id="log">Waiting...</div>
+
+    <script>
+        function log(msg) {
+            const el = document.getElementById('log');
+            el.innerHTML += msg + "\n";
+            console.log(msg);
+        }
+
+        async function testAPI() {
+            const key = document.getElementById('apiKey').value.trim();
+            if (!key) { alert("Enter key"); return; }
+
+            document.getElementById('log').innerHTML = "Testing...\n";
+
+            const models = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.0-pro'];
+
+            for (const model of models) {
+                log(`\n--- Testing Model: ${model} ---`);
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: "Hello, are you working?" }] }]
+                        })
+                    });
+
+                    log(`Status: ${response.status} ${response.statusText}`);
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        log("SUCCESS! Response:");
+                        log(JSON.stringify(data, null, 2));
+                        return; // Stop on first success
+                    } else {
+                        log("ERROR Payload:");
+                        log(JSON.stringify(data, null, 2));
+                    }
+                } catch (e) {
+                    log("NETWORK/CODE ERROR: " + e.message);
+                }
+            }
+            log("\nDone testing all models.");
+        }
+    </script>
+</body>
+
+</html>
