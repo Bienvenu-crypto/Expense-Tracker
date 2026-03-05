@@ -18,10 +18,12 @@
     --gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
 
     --text-primary: #f8fafc;
-    --text-secondary: #cbd5e1;
-    --text-muted: #64748b;
+    --text-secondary: #ffffff;
+    /* Was #cbd5e1 */
+    --text-muted: #ffffff;
+    /* Was #64748b */
 
-    --border-color: rgba(148, 163, 184, 0.1);
+    --border-color: rgba(148, 163, 184, 0.3);
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
@@ -643,19 +645,20 @@ input:-webkit-autofill:active {
 }
 
 .custom-table th {
-    background: rgba(255, 255, 255, 0.05);
+    background: #10b981;
+    /* Green accent */
     padding: 16px 20px;
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
     font-size: 12px;
     letter-spacing: 1px;
-    border-bottom: 1px solid var(--border-color);
+    border: 1px solid var(--border-color);
 }
 
 .custom-table td {
     padding: 16px 20px;
-    border-bottom: 1px solid var(--border-color);
+    border: 1px solid var(--border-color);
     color: var(--text-primary);
     font-size: 15px;
     vertical-align: middle;
@@ -817,4 +820,25 @@ input:-webkit-autofill:active {
     to {
         transform: rotate(360deg);
     }
+}
+
+/* User Name Hover Effect */
+.user-name-hover {
+    transition: var(--transition);
+}
+
+.user-name-hover:hover {
+    color: #10b981 !important;
+    /* Green accent */
+}
+
+/* Sign Out Button Hover Effect */
+.sign-out-btn {
+    transition: var(--transition);
+}
+
+.sign-out-btn:hover {
+    background-color: maroon !important;
+    /* Maroon */
+    border-color: maroon !important;
 }

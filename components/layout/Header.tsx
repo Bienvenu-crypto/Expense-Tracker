@@ -82,11 +82,9 @@ const Header = () => {
                             className="nav-btn"
                             onClick={() => setIsNotificationOpen(!isNotificationOpen)}
                             style={{
-                                width: '40px', height: '40px', borderRadius: '50%',
+                                width: '40px', height: '40px', borderRadius: '8px',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 padding: '0',
-                                background: isNotificationOpen ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)',
-                                border: 'none', color: 'white', transition: 'background 0.2s'
                             }}
                             title="Notifications"
                         >
@@ -151,13 +149,16 @@ const Header = () => {
                         <>
                             <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 8px' }}></div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '15px', color: 'var(--text-secondary)', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }}>
+                                <span className="user-name-hover" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '15px', color: '#10b981', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                                        <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
+                                    </svg>
                                     {session.user?.name || session.user?.email}
                                 </span>
                                 <button
                                     onClick={() => signOut()}
-                                    className="nav-btn"
-                                    style={{ padding: '6px 12px', fontSize: '14px', background: 'rgba(255,255,255,0.1)' }}
+                                    className="nav-btn sign-out-btn"
+                                    style={{ padding: '6px 14px', fontSize: '14px', backgroundColor: '#10b981', color: 'white' }}
                                 >
                                     Sign Out
                                 </button>
