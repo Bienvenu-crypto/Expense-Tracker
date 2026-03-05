@@ -1,20 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useExpenses, CATEGORY_ICONS } from '@/context/ExpenseContext';
+import { useExpenses, CATEGORY_ICONS, Expense } from '@/context/ExpenseContext';
 import Modal from './Modal';
 
 interface AddExpenseModalProps {
     onClose: () => void;
+    editExpense?: Expense;
 }
 
-const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onClose }) => {
-    const { categories, budgets, expenses, addExpense } = useExpenses();
+const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onClose, editExpense }) => {
+    const { categories, budgets, expenses, addExpense, updateExpense } = useExpenses();
 
-    const [amount, setAmount] = useState('');
-    const [category, setCategory] = useState('');
-    const [description, setDescription] = useState('');
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [amount, setAmount] = useState(editExpense ? editExpense.amount.toString() : '');
+    const [category, setCategory] = useState(editExpense ? editExpense.category : '');
+    const [description, setDescription] = useState(editExpense ? editExpense.description : '');
+    const [date, setDate] = useState(editExpense ? editExpense.date : new Date().toISOString().split('T')[0]);
 
     const [warning, setWarning] = useState<string | null>(null);
 
@@ -53,13 +54,23 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onClose }) => {
             }
         }
 
-        addExpense(expense);
+        if (editExpense) {
+            updateExpense(editExpense.id, {
+                amount: numAmount,
+                category,
+                description,
+                date,
+                timestamp: new Date(date).getTime()
+            });
+        } else {
+            addExpense(expense);
+        }
         onClose();
     };
 
     return (
         <Modal
-            title="Add New Expense"
+            title={editExpense ? "Edit Expense" : "Add New Expense"}
             onClose={onClose}
         >
             <form onSubmit={handleSubmit}>
@@ -118,7 +129,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onClose }) => {
                 <div className="modal-actions">
                     <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
                     <button type="submit" className="btn-primary">
-                        {warning ? 'Add Anyway' : 'Add Expense'}
+                        {warning ? 'Save Anyway' : (editExpense ? 'Update Expense' : 'Add Expense')}
                     </button>
                 </div>
             </form>

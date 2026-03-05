@@ -1,0 +1,7 @@
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from prisma\schema.prisma.
+Datasource "db": PostgreSQL database "neondb", schema "public" at "ep-restless-cherry-ain2wzc3-pooler.c-4.us-east-1.aws.neon.tech"
+
+Your database is now in sync with your Prisma schema. Done in 25.30s
+

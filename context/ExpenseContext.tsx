@@ -1,13 +1,14 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 export const STORAGE_KEYS = {
     EXPENSES: 'expenses',
     BUDGETS: 'budgets',
     GOALS: 'financial_goals',
     API_KEY: 'gemini_api_key',
-    CATEGORIES: 'categories'
+    CATEGORIES: 'categories',
 };
 
 export const DEFAULT_CATEGORIES = ['Food', 'Entertainment', 'Transport', 'Shopping', 'Bills', 'Health', 'Other'];
@@ -31,17 +32,20 @@ export interface Expense {
     timestamp: number;
 }
 
+
+
 interface ExpenseContextType {
     expenses: Expense[];
     budgets: Record<string, number>;
     categories: string[];
     apiKey: string;
     financialGoals: string;
-    activeView: 'dashboard' | 'categories' | 'advisor';
+    activeView: 'dashboard' | 'categories' | 'advisor' | 'expenses';
     isAddModalOpen: boolean;
-    setActiveView: (view: 'dashboard' | 'categories' | 'advisor') => void;
+    setActiveView: (view: 'dashboard' | 'categories' | 'advisor' | 'expenses') => void;
     setIsAddModalOpen: (open: boolean) => void;
     addExpense: (expense: Expense) => void;
+    updateExpense: (id: string, updatedExpense: Partial<Expense>) => void;
     deleteExpense: (id: string) => void;
     updateBudgets: (newBudgets: Record<string, number>) => void;
     saveApiKey: (key: string) => void;
@@ -58,74 +62,151 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
     const [apiKey, setApiKey] = useState('');
     const [financialGoals, setFinancialGoals] = useState('');
-    const [activeView, setActiveView] = useState<'dashboard' | 'categories' | 'advisor'>('dashboard');
+    const [activeView, setActiveView] = useState<'dashboard' | 'categories' | 'advisor' | 'expenses'>('dashboard');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const { data: session } = useSession();
 
     useEffect(() => {
-        // Load data from localStorage
-        const storedExpenses = localStorage.getItem(STORAGE_KEYS.EXPENSES);
-        const storedBudgets = localStorage.getItem(STORAGE_KEYS.BUDGETS);
-        const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-        const storedApiKey = localStorage.getItem(STORAGE_KEYS.API_KEY);
-        const storedGoals = localStorage.getItem(STORAGE_KEYS.GOALS);
+        const loadInitialData = async () => {
+            // Priority 1: Fetch from database if user is logged in
+            if (session?.user) {
+                try {
+                    const res = await fetch('/api/user-data');
+                    if (res.ok) {
+                        const data = await res.json();
+                        setExpenses(data.expenses);
+                        setBudgets(data.budgets);
+                        setCategories(data.categories.length > 0 ? data.categories : DEFAULT_CATEGORIES);
+                        setApiKey(data.apiKey);
+                        setFinancialGoals(data.financialGoal);
+                        return; // Successfully loaded from DB, skip localStorage
+                    }
+                } catch (error) {
+                    console.error("Failed to load from database:", error);
+                }
+            }
 
-        if (storedExpenses) setExpenses(JSON.parse(storedExpenses));
-        if (storedBudgets) {
-            setBudgets(JSON.parse(storedBudgets));
-        } else {
-            const defaults: Record<string, number> = {};
-            DEFAULT_CATEGORIES.forEach(cat => defaults[cat] = 0);
-            setBudgets(defaults);
-        }
-        if (storedCategories) setCategories(JSON.parse(storedCategories));
-        if (storedApiKey) setApiKey(storedApiKey);
-        if (storedGoals) setFinancialGoals(storedGoals);
-    }, []);
+            // Fallback: Load data from localStorage
+            const storedExpenses = localStorage.getItem(STORAGE_KEYS.EXPENSES);
+            const storedBudgets = localStorage.getItem(STORAGE_KEYS.BUDGETS);
+            const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+            const storedApiKey = localStorage.getItem(STORAGE_KEYS.API_KEY);
+            const storedGoals = localStorage.getItem(STORAGE_KEYS.GOALS);
 
-    const addExpense = (expense: Expense) => {
+            if (storedExpenses) setExpenses(JSON.parse(storedExpenses));
+            if (storedBudgets) {
+                setBudgets(JSON.parse(storedBudgets));
+            } else {
+                const defaults: Record<string, number> = {};
+                DEFAULT_CATEGORIES.forEach(cat => defaults[cat] = 0);
+                setBudgets(defaults);
+            }
+            if (storedCategories) setCategories(JSON.parse(storedCategories));
+            if (storedApiKey) setApiKey(storedApiKey);
+            if (storedGoals) setFinancialGoals(storedGoals);
+        };
+
+        loadInitialData();
+    }, [session]);
+
+    const addExpense = async (expense: Expense) => {
         const newExpenses = [expense, ...expenses];
         setExpenses(newExpenses);
         localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(newExpenses));
+
+        if (session) {
+            await fetch('/api/expenses', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(expense),
+            });
+        }
     };
 
-    const deleteExpense = (id: string) => {
+    const updateExpense = async (id: string, updatedExpense: Partial<Expense>) => {
+        const newExpenses = expenses.map(e => e.id === id ? { ...e, ...updatedExpense } : e);
+        setExpenses(newExpenses);
+        localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(newExpenses));
+
+        if (session) {
+            await fetch('/api/expenses', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, ...updatedExpense }),
+            });
+        }
+    };
+
+    const deleteExpense = async (id: string) => {
         const newExpenses = expenses.filter(e => e.id !== id);
         setExpenses(newExpenses);
         localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(newExpenses));
+
+        if (session) {
+            await fetch('/api/expenses', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id }),
+            });
+        }
     };
 
-    const updateBudgets = (newBudgets: Record<string, number>) => {
+    const updateBudgets = async (newBudgets: Record<string, number>) => {
         setBudgets(newBudgets);
         localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(newBudgets));
+
+        if (session) {
+            await fetch('/api/budgets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ budgets: newBudgets }),
+            });
+        }
     };
 
     const saveApiKey = (key: string) => {
         setApiKey(key);
         localStorage.setItem(STORAGE_KEYS.API_KEY, key);
+        // Add DB sync for API key if needed
     };
 
     const saveFinancialGoals = (goals: string) => {
         setFinancialGoals(goals);
         localStorage.setItem(STORAGE_KEYS.GOALS, goals);
+        // Add DB sync for goals if needed
     };
 
-    const addCategory = (name: string) => {
+    const addCategory = async (name: string) => {
         if (!categories.includes(name)) {
             const newCategories = [...categories, name];
             setCategories(newCategories);
             localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(newCategories));
-
-            // Add budget for new category
             const newBudgets = { ...budgets, [name]: 0 };
             setBudgets(newBudgets);
             localStorage.setItem(STORAGE_KEYS.BUDGETS, JSON.stringify(newBudgets));
+
+            if (session) {
+                await fetch('/api/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name }),
+                });
+            }
         }
     };
 
-    const deleteCategory = (name: string) => {
+    const deleteCategory = async (name: string) => {
         const newCategories = categories.filter(c => c !== name);
         setCategories(newCategories);
         localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(newCategories));
+
+        if (session) {
+            await fetch('/api/categories', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name }),
+            });
+        }
     };
 
     return (
@@ -140,13 +221,15 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
             setActiveView,
             setIsAddModalOpen,
             addExpense,
+            updateExpense,
             deleteExpense,
             updateBudgets,
             saveApiKey,
             saveFinancialGoals,
             addCategory,
-            deleteCategory
+            deleteCategory,
         }}>
+
             {children}
         </ExpenseContext.Provider>
     );

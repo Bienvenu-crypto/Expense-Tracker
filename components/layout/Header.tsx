@@ -1,12 +1,37 @@
 'use client';
 
 import React from 'react';
+import { usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 import { useExpenses } from '@/context/ExpenseContext';
 
 const Header = () => {
-    const { activeView, setActiveView, setIsAddModalOpen, expenses, budgets, categories } = useExpenses();
+    const pathname = usePathname();
+    const { data: session } = useSession();
+    const {
+        activeView, setActiveView,
+        setIsAddModalOpen,
+        expenses, budgets, categories,
+    } = useExpenses();
     const [isNotificationOpen, setIsNotificationOpen] = React.useState(false);
     const notificationRef = React.useRef<HTMLDivElement>(null);
+
+    const isAuthPage = pathname === '/login' || pathname === '/register';
+    const shouldHide = isAuthPage || !session;
+
+    // Close dropdown when clicking outside
+    React.useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+                setIsNotificationOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // All hooks have been called above — now safe to return null conditionally
+    if (shouldHide) return null;
 
     // Notification Logic: Check if any budget is exceeded
     const now = new Date();
@@ -26,17 +51,6 @@ const Header = () => {
     }).filter(c => c.isOver);
 
     const overBudgetCount = overBudgetCategories.length;
-
-    // Close dropdown when clicking outside
-    React.useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-                setIsNotificationOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     return (
         <header className="header">
@@ -62,22 +76,17 @@ const Header = () => {
                         AI Advisor
                     </button>
 
-                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', margin: '0 8px' }} ref={notificationRef}>
+                    {/* Notification Bell */}
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', margin: '0 4px' }} ref={notificationRef}>
                         <button
                             className="nav-btn"
                             onClick={() => setIsNotificationOpen(!isNotificationOpen)}
                             style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
+                                width: '40px', height: '40px', borderRadius: '50%',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 padding: '0',
-                                background: isNotificationOpen ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)',
-                                border: 'none',
-                                color: 'white',
-                                transition: 'background 0.2s'
+                                background: isNotificationOpen ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)',
+                                border: 'none', color: 'white', transition: 'background 0.2s'
                             }}
                             title="Notifications"
                         >
@@ -88,42 +97,23 @@ const Header = () => {
                         </button>
                         {overBudgetCount > 0 && (
                             <span style={{
-                                position: 'absolute',
-                                top: '-2px',
-                                right: '-2px',
-                                background: '#f43f5e',
-                                color: 'white',
-                                borderRadius: '50%',
-                                minWidth: '20px',
-                                height: '20px',
-                                fontSize: '12px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: '700',
-                                border: '3px solid #0a0e27',
-                                pointerEvents: 'none',
-                                padding: '0 4px',
-                                zIndex: 1
+                                position: 'absolute', top: '-2px', right: '-2px',
+                                background: '#f43f5e', color: 'white', borderRadius: '50%',
+                                minWidth: '20px', height: '20px', fontSize: '12px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontWeight: '700', border: '3px solid #0a0e27',
+                                pointerEvents: 'none', padding: '0 4px', zIndex: 1
                             }}>
                                 {overBudgetCount}
                             </span>
                         )}
 
-                        {/* Notification Dropdown */}
                         {isNotificationOpen && (
                             <div style={{
-                                position: 'absolute',
-                                top: '50px',
-                                right: '0',
-                                width: '300px',
-                                background: 'var(--bg-modal)',
-                                backdropFilter: 'blur(40px)',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: 'var(--border-radius)',
-                                boxShadow: 'var(--shadow-lg)',
-                                padding: '16px',
-                                zIndex: 1000,
+                                position: 'absolute', top: '50px', right: '0', width: '300px',
+                                background: 'var(--bg-modal)', backdropFilter: 'blur(40px)',
+                                border: '1px solid var(--border-color)', borderRadius: 'var(--border-radius)',
+                                boxShadow: 'var(--shadow-lg)', padding: '16px', zIndex: 1000,
                                 animation: 'modalSlideIn 0.2s ease'
                             }}>
                                 <h3 style={{ fontSize: '16px', marginBottom: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
@@ -136,7 +126,7 @@ const Header = () => {
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                         {overBudgetCategories.map(cat => (
-                                            <div key={cat.name} style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '8px', borderLeft: '4px solid #f43f5e' }}>
+                                            <div key={cat.name} style={{ background: 'rgba(239,68,68,0.1)', padding: '10px', borderRadius: '8px', borderLeft: '4px solid #f43f5e' }}>
                                                 <div style={{ fontWeight: '600', fontSize: '14px', marginBottom: '4px' }}>Budget Exceeded!</div>
                                                 <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                                                     <strong>{cat.name}</strong>: Spent ${cat.spent.toFixed(2)} of ${cat.budget.toFixed(2)}
@@ -149,13 +139,31 @@ const Header = () => {
                         )}
                     </div>
 
-                    <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 8px' }}></div>
                     <button
-                        className="btn-primary"
-                        onClick={() => setIsAddModalOpen(true)}
+                        className={`nav-btn ${activeView === 'expenses' ? 'active' : ''}`}
+                        onClick={() => setActiveView('expenses')}
                     >
-                        + Add Expense
+                        Expenses
                     </button>
+
+                    {/* User Profile / Logout */}
+                    {session && (
+                        <>
+                            <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 8px' }}></div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '15px', color: 'var(--text-secondary)', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }}>
+                                    {session.user?.name || session.user?.email}
+                                </span>
+                                <button
+                                    onClick={() => signOut()}
+                                    className="nav-btn"
+                                    style={{ padding: '6px 12px', fontSize: '14px', background: 'rgba(255,255,255,0.1)' }}
+                                >
+                                    Sign Out
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </header>

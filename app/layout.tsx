@@ -8,6 +8,8 @@ export const metadata: Metadata = {
     description: "Modern expense tracker built with Next.js",
 };
 
+import { AuthProvider } from "@/components/providers/AuthProvider";
+
 export default function RootLayout({
     children,
 }: Readonly<{
@@ -16,14 +18,16 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body>
-                <ExpenseProvider>
-                    <Header />
-                    <main className="main-content">
-                        <div className="container">
-                            {children}
-                        </div>
-                    </main>
-                </ExpenseProvider>
+                <AuthProvider>
+                    <ExpenseProvider>
+                        <Header />
+                        <main className="main-content">
+                            <div className="container">
+                                {children}
+                            </div>
+                        </main>
+                    </ExpenseProvider>
+                </AuthProvider>
             </body>
         </html>
     );
