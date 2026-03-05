@@ -46,11 +46,7 @@ const LandingPage = () => {
                     title="AI Advisor"
                     description="Get professional financial suggestions based on your personal spending habits and future goals."
                 />
-                <FeatureCard
-                    icon={<Shield size={32} color="var(--accent-secondary)" />}
-                    title="Secure Cloud Sync"
-                    description="Your data is encrypted and synced across all your devices. Never lose a receipt again."
-                />
+
             </section>
 
             {/* Social Proof / Stats */}
