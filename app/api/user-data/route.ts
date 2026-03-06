@@ -27,7 +27,7 @@ export async function GET() {
 
         return NextResponse.json({
             expenses: user.expenses,
-            budgets: user.budgets.reduce((acc, b) => ({ ...acc, [b.category]: b.amount }), {}),
+            budgets: user.budgets.reduce((acc: Record<string, number>, b) => ({ ...acc, [b.category]: b.amount }), {}),
             categories: user.categories.map(c => c.name),
             financialGoal: user.financialGoal?.goal || "",
             apiKey: user.apiSettings?.key || ""
